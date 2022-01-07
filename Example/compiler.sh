@@ -1,0 +1,1 @@
+g++ -std=c++17 main.cpp Login.cpp -o LoginServer.out -lstatic_lib_linux_64 -lpthread -lmysqlclient
