@@ -27,9 +27,20 @@ void CThreadPool::MfTheadFun()
             MdQueueCondition.wait(lock, [this] { return this->MdIsStop || !this->MdTasks.empty(); });
             if (this->MdIsStop && this->MdTasks.empty())
                 return;
-            task = std::move(this->MdTasks.front());
+            task = this->MdTasks.front();
             this->MdTasks.pop();
+            {
+                std::unique_lock<std::mutex> lock2(MdCountMutex);
+                if (++MdCount > 20000)
+                {
+                    MdCount = 0;
+                    std::queue<std::function<void()>>(MdTasks).swap(MdTasks);
+                }
+            }
+            
         }
         task();
     }
 }
+
+

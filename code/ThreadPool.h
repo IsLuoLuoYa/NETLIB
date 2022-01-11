@@ -5,9 +5,10 @@
 #include <condition_variable>
 #include <functional>
 #include <future>
+#include <list>
 
 
-class CThreadPool 
+class CThreadPool
 {
 private:
     std::vector<std::thread>            MdPool;             // 线程池
@@ -15,6 +16,8 @@ private:
     std::mutex                          MdQueueMutex;       // 队列的锁
     std::condition_variable             MdQueueCondition;   // 队列的条件变量
     std::atomic<bool>                   MdIsStop;           // 队列停止时使用
+    int                                 MdCount = 0;
+    std::mutex                          MdCountMutex;
 public:
     CThreadPool();
     ~CThreadPool();
@@ -24,7 +27,7 @@ private:
     void MfTheadFun();
 public:
     template<class F, class... Args>
-    auto MfEnqueue(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type>;
+    auto MfEnqueue(F&& f, Args&&... args)->std::future<typename std::result_of<F(Args...)>::type>;
 };
 
 
@@ -43,8 +46,6 @@ auto CThreadPool::MfEnqueue(F&& f, Args&&... args)
     std::future<return_type> res = task->get_future();
     {
         std::unique_lock<std::mutex> lock(MdQueueMutex);
-        if (MdIsStop)
-            printf("MfEnqueue on MdIsStopped ThreadPool");
         MdTasks.emplace([task]() { (*task)(); });
     }
     MdQueueCondition.notify_one();
